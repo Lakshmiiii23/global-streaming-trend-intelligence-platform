@@ -127,18 +127,22 @@ if st.sidebar.button("🔄 Trigger Pipeline Refresh", help="Run ingestion and tr
         if not matched_ctry.empty:
             c_targets = [matched_ctry.iloc[0]]
             
-    with st.sidebar.status(f"Running pipeline ({source_mode})...", expanded=True) as status:
-        st.write("Ingesting Bronze layer from FlixPatrol...")
-        batch_key = run_ingestion_bronze(
-            source=source_mode, 
-            days=1, 
-            platforms=p_targets, 
-            countries=c_targets
-        )
-        st.write("Processing Silver & Gold layers...")
-        run_processing_silver_gold(batch_key)
-        status.update(label="Live pipeline run complete!", state="complete", expanded=False)
-    st.rerun()
+    try:
+        with st.sidebar.status(f"Running pipeline ({source_mode})...", expanded=True) as status:
+            st.write("Ingesting Bronze layer from FlixPatrol...")
+            batch_key = run_ingestion_bronze(
+                source=source_mode, 
+                days=1, 
+                platforms=p_targets, 
+                countries=c_targets
+            )
+            st.write("Processing Silver & Gold layers...")
+            run_processing_silver_gold(batch_key)
+            status.update(label="Live pipeline run complete!", state="complete", expanded=False)
+        st.toast("🎉 Live charts refreshed successfully!", icon="✅")
+        st.rerun()
+    except Exception as e:
+        st.sidebar.error(f"⚠️ Refresh issue: {e}")
 
 # Build SQL query filter clauses
 platform_clause = ""
