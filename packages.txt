@@ -1,0 +1,4 @@
+xvfb
+libnss3
+libatk1.0-0
+libasound2t64

@@ -66,6 +66,9 @@ def run_ingestion_bronze(
             logger.error("Live scraping encountered an error: %s", e)
 
     if not records:
+        if source == "live":
+            logger.warning("Live scraping returned 0 records. Preserving existing database records without overwriting.")
+            return None
         logger.info("Utilizing resilient streaming generator fallback to ensure pipeline continuity...")
         generator = StreamingDataGenerator()
         fallback_plats = target_platforms if target_platforms else settings.TARGET_PLATFORMS

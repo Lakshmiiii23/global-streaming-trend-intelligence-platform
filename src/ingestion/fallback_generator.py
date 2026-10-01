@@ -9,26 +9,27 @@ logger = logging.getLogger(__name__)
 SAMPLE_CATALOGUE = {
     "netflix": {
         "movies": [
-            "UNABOMBER", "Demon Slayer: Infinity Castle", "The Mummy", 
-            "The Whisper Man", "Rebel Ridge", "Glass Onion: Knives Out", 
-            "Leave the World Behind", "Red Notice", "Society of the Snow", "Extraction 2"
+            "Irumudi", "Vishwanath & Sons", "Modha Rathri", "Baby Do Die Do",
+            "Demon Slayer: Kimetsu no Yaiba Infinity Castle", "Lust Stories 3", 
+            "UNABOMBER", "Dhamaal 4", "Gandhari", "G.D.N"
         ],
         "series": [
-            "Monster: The Lizzie Borden Story", "LEGO ONE PIECE", "Not a Stranger", 
-            "The Final Problem", "Squid Game: Season 2", "Wednesday", 
-            "Stranger Things", "Bridgerton", "The Night Agent", "Baby Reindeer"
+            "The Great Indian Kapil Show", "Shaque: Trust No One", "Raw", 
+            "Chumbak", "Zakir Khan: Papa Yaar", "Musafir Cafe", 
+            "Operation Safed Sagar: The Untold Story of the Kargil War", 
+            "India's Got Latent", "The Final Problem", "LEGO ONE PIECE"
         ]
     },
     "amazon-prime": {
         "movies": [
-            "Road House", "The Idea of You", "Saltburn", "Air", 
-            "The Beekeeper", "Creed III", "Thirteen Lives", 
-            "Candy Cane Lane", "Samaritan", "My Fault"
+            "The Love Hypothesis", "Ramba Oorvasi Menaka", "Ram and Leela", 
+            "Don't Be Shy!", "Monster Island", "The Death of Robin Hood", 
+            "Karmakhya", "Deewana", "Magudam", "Photographer"
         ],
         "series": [
-            "Fallout", "The Boys", "The Lord of the Rings: Rings of Power", 
-            "Reacher", "Invincible", "The Summer I Turned Pretty", 
-            "Gen V", "The Wheel of Time", "Tom Clancy's Jack Ryan", "Citadel"
+            "Rise and Fall", "Waiting Hai", "The Love Hypothesis", 
+            "Ramba Oorvasi Menaka", "Neagley", "The Revolutionaries", 
+            "Ram and Leela", "Reacher", "Don't Be Shy!", "Monster Island"
         ]
     },
     "disney": {

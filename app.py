@@ -162,11 +162,15 @@ if st.sidebar.button("🔄 Trigger Pipeline Refresh", help="Run ingestion and tr
                 platforms=p_targets, 
                 countries=c_targets
             )
-            st.write("Processing Silver & Gold layers...")
-            run_processing_silver_gold(batch_key)
-            status.update(label="Live pipeline run complete!", state="complete", expanded=False)
-        st.toast("🎉 Live charts refreshed successfully!", icon="✅")
-        st.rerun()
+            if batch_key:
+                st.write("Processing Silver & Gold layers...")
+                run_processing_silver_gold(batch_key)
+                status.update(label="Live pipeline run complete!", state="complete", expanded=False)
+                st.toast("🎉 Live charts refreshed successfully!", icon="✅")
+                st.rerun()
+            else:
+                status.update(label="Live charts up-to-date!", state="complete", expanded=False)
+                st.sidebar.info("💡 Real-time charts are loaded from the database. Automated scraping runs via GitHub Actions runner.")
     except Exception as e:
         st.sidebar.error(f"⚠️ Refresh issue: {e}")
 
