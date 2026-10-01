@@ -1,13 +1,14 @@
 # 🎯 Global Streaming Trend Intelligence Platform
 
-[![CI/CD Pipeline](https://github.com/your-username/streaming-intelligence-platform/actions/workflows/pipeline.yml/badge.svg)](https://github.com/your-username/streaming-intelligence-platform/actions)
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://lakshmiiii23-global-streaming-trend-intelligence-pla-app-c2b9zl.streamlit.app/)
+[![CI/CD Pipeline](https://github.com/Lakshmiiii23/global-streaming-trend-intelligence-platform/actions/workflows/pipeline.yml/badge.svg)](https://github.com/Lakshmiiii23/global-streaming-trend-intelligence-platform/actions)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![Architecture: Medallion](https://img.shields.io/badge/Architecture-Medallion%20(Bronze%2FSilver%2FGold)-brightgreen.svg)]()
-[![Database: Neon PostgreSQL](https://img.shields.io/badge/Database-Neon%20Serverless%20Postgres-00E599.svg)](https://neon.tech/)
-[![Storage: Cloudflare R2](https://img.shields.io/badge/Storage-Cloudflare%20R2%20(S3)-F38020.svg)](https://www.cloudflare.com/products/r2/)
-[![Dashboard: Streamlit](https://img.shields.io/badge/Serving-Streamlit%20Cloud-FF4B4B.svg)](https://streamlit.io/)
+[![Dashboard: Streamlit](https://img.shields.io/badge/Live%20App-Streamlit%20Cloud-FF4B4B.svg)](https://lakshmiiii23-global-streaming-trend-intelligence-pla-app-c2b9zl.streamlit.app/)
 
-A production-grade, automated streaming intelligence pipeline and interactive analytics dashboard that ingests daily Top 10 streaming charts (Netflix, Amazon Prime Video, Disney+, Apple TV+, HBO Max) across global markets, computes day-over-day rank velocity and endurance metrics, and serves insights—**all on 100% free-tier cloud infrastructure**.
+> 🚀 **Live Interactive Dashboard:** [**https://lakshmiiii23-global-streaming-trend-intelligence-pla-app-c2b9zl.streamlit.app/**](https://lakshmiiii23-global-streaming-trend-intelligence-pla-app-c2b9zl.streamlit.app/)
+> 
+> *Automated end-to-end data engineering pipeline tracking real-time Top 10 streaming charts across Netflix, Prime Video, Disney+, Apple TV+, and HBO Max across 10 global regions.*
 
 ---
 
