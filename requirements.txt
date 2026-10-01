@@ -1,0 +1,23 @@
+# Web Scraping & Ingestion
+beautifulsoup4>=4.12.0
+camoufox>=0.5.0
+curl_cffi>=0.7.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Cloud Storage & Database
+boto3>=1.34.0
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+
+# Data Processing & Analytics
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Dashboard & Visualization
+streamlit>=1.30.0
+plotly>=5.18.0
+
+# Testing & Quality
+pytest>=7.4.0
+pydantic>=2.0.0
