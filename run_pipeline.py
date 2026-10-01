@@ -3,7 +3,7 @@ import logging
 import sys
 import uuid
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from config.settings import settings
 from src.ingestion.flixpatrol_scraper import FlixPatrolScraper
@@ -20,13 +20,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger("PipelineRunner")
 
-def run_ingestion_bronze(source: str = "hybrid", days: int = 7) -> str:
+def run_ingestion_bronze(
+    source: str = "hybrid", 
+    days: int = 7, 
+    platforms: Optional[List[str]] = None, 
+    countries: Optional[List[str]] = None
+) -> str:
     """
     Acquire raw data and store in Bronze Layer (Cloudflare R2 or local bronze storage).
     
     Args:
         source: 'live', 'synthetic', or 'hybrid'
         days: Number of historical days to simulate if synthetic
+        platforms: Specific platforms to target
+        countries: Specific countries to target
         
     Returns:
         Storage key or path to the saved batch.
@@ -38,14 +45,17 @@ def run_ingestion_bronze(source: str = "hybrid", days: int = 7) -> str:
     storage = get_storage_manager()
     records: List[Dict[str, Any]] = []
     
+    # Resolve target platforms and countries
+    target_platforms = platforms or ["netflix", "amazon-prime"]
+    target_countries = countries or ["india", "united-states", "world"]
+    
     if source in ("live", "hybrid"):
-        logger.info("Attempting live scrape via Camoufox on FlixPatrol...")
+        logger.info("Attempting live scrape via Camoufox on FlixPatrol for %s in %s...", target_platforms, target_countries)
         try:
             scraper = FlixPatrolScraper()
-            # Scrape top targets
             live_records = scraper.scrape_all_targets(
-                platforms=settings.TARGET_PLATFORMS[:2], # Netflix & Amazon Prime
-                countries=settings.TARGET_COUNTRIES[:2]   # World & US
+                platforms=target_platforms,
+                countries=target_countries
             )
             if live_records:
                 records.extend(live_records)
@@ -127,6 +137,18 @@ def main():
         help="Number of days of data to generate/process"
     )
     parser.add_argument(
+        "--platforms",
+        type=str,
+        default=None,
+        help="Comma-separated platforms to target (e.g. netflix,amazon-prime)"
+    )
+    parser.add_argument(
+        "--countries",
+        type=str,
+        default=None,
+        help="Comma-separated countries to target (e.g. india,united-states)"
+    )
+    parser.add_argument(
         "--batch-key", 
         type=str, 
         default=None, 
@@ -135,8 +157,16 @@ def main():
 
     args = parser.parse_args()
 
+    target_plats = [p.strip() for p in args.platforms.split(",")] if args.platforms else None
+    target_ctrys = [c.strip() for c in args.countries.split(",")] if args.countries else None
+
     if args.mode in ("all", "scrape"):
-        batch_key = run_ingestion_bronze(source=args.source, days=args.days)
+        batch_key = run_ingestion_bronze(
+            source=args.source, 
+            days=args.days,
+            platforms=target_plats,
+            countries=target_ctrys
+        )
     else:
         batch_key = args.batch_key
         if not batch_key:

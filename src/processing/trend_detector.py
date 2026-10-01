@@ -61,6 +61,23 @@ class TrendProcessor:
                 d_str = str(r[0])
                 history_cache[(d_str, r[1], r[2], r[3])] = (r[4], r[5] or 1)
 
+            # Purge prior rankings/trends for incoming (chart_date, platform, country) combinations to prevent duplicate ranks
+            cleared_batches = set()
+            for rec in records_sorted:
+                p_slug = rec["platform"]
+                c_iso = rec["country"]
+                p_id = platform_cache.get(p_slug) or self.db.get_platform_id(p_slug) or 1
+                c_id = country_cache.get(c_iso) or self.db.get_country_id(c_iso) or 1
+                b_key = (str(rec["chart_date"]), p_id, c_id)
+                if b_key not in cleared_batches:
+                    cleared_batches.add(b_key)
+                    conn.execute(text("""
+                        DELETE FROM rankings WHERE chart_date = :d AND platform_id = :p AND country_id = :c
+                    """), {"d": b_key[0], "p": p_id, "c": c_id})
+                    conn.execute(text("""
+                        DELETE FROM trends WHERE chart_date = :d AND platform_id = :p AND country_id = :c
+                    """), {"d": b_key[0], "p": p_id, "c": c_id})
+
             # 2. Iterate through records and compute deltas
             for rec in records_sorted:
                 chart_date_str = str(rec["chart_date"])
@@ -133,8 +150,8 @@ class TrendProcessor:
                 else:
                     previous_rank = None
                     rank_change = None
-                    days_in_top_10 = 1
-                    is_new_entry = True
+                    days_in_top_10 = int(rec.get("days_in_top_10") or 1)
+                    is_new_entry = (days_in_top_10 <= 1)
 
                 # Update history cache with current day's position
                 history_cache[(chart_date_str, platform_id, country_id, title_id)] = (current_rank, days_in_top_10)

@@ -60,6 +60,27 @@ st.markdown("""
         padding: 8px 16px;
         border-radius: 6px;
     }
+    .custom-leaderboard-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+    }
+    .custom-leaderboard-table th {
+        background-color: #1e293b;
+        color: #94a3b8;
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 2px solid #334155;
+        font-weight: 600;
+    }
+    .custom-leaderboard-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #1e293b;
+        color: #f1f5f9;
+    }
+    .custom-leaderboard-table tr:hover {
+        background-color: #1e293b66;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -89,15 +110,34 @@ selected_country = st.sidebar.selectbox("🌍 Country / Region", all_countries, 
 content_type_filter = st.sidebar.radio("🎞️ Content Type", ["All", "Movies Only", "TV Shows Only"])
 
 st.sidebar.markdown("---")
-scrape_live = st.sidebar.checkbox("Scrape Live FlixPatrol (requires ~30s)", value=False)
+scrape_live = st.sidebar.checkbox("Scrape Live FlixPatrol (requires ~20s)", value=True)
 if st.sidebar.button("🔄 Trigger Pipeline Refresh", help="Run ingestion and trend detection"):
-    source_mode = "hybrid" if scrape_live else "synthetic"
+    source_mode = "live" if scrape_live else "synthetic"
+    
+    # Target selected platform/country or defaults
+    p_targets = None
+    if selected_platform != "All Platforms":
+        matched_plat = platforms_df.loc[platforms_df["name"] == selected_platform, "slug"]
+        if not matched_plat.empty:
+            p_targets = [matched_plat.iloc[0]]
+            
+    c_targets = None
+    if selected_country != "All Countries":
+        matched_ctry = countries_df.loc[countries_df["name"] == selected_country, "iso_code"]
+        if not matched_ctry.empty:
+            c_targets = [matched_ctry.iloc[0]]
+            
     with st.sidebar.status(f"Running pipeline ({source_mode})...", expanded=True) as status:
-        st.write("Ingesting Bronze layer...")
-        batch_key = run_ingestion_bronze(source=source_mode, days=1)
+        st.write("Ingesting Bronze layer from FlixPatrol...")
+        batch_key = run_ingestion_bronze(
+            source=source_mode, 
+            days=1, 
+            platforms=p_targets, 
+            countries=c_targets
+        )
         st.write("Processing Silver & Gold layers...")
         run_processing_silver_gold(batch_key)
-        status.update(label="Pipeline run complete!", state="complete", expanded=False)
+        status.update(label="Live pipeline run complete!", state="complete", expanded=False)
     st.rerun()
 
 # Build SQL query filter clauses
@@ -265,18 +305,27 @@ with tab2:
             pts = int(row["points"]) if pd.notna(row.get("points")) else 0
             cur_rank = int(row["current_rank"]) if pd.notna(row.get("current_rank")) else 1
             
-            display_rows.append({
+            row_dict = {
                 "Rank": f"#{cur_rank}",
-                "Title": row["title_name"],
-                "Platform": row["platform_name"],
+                "Title": row["title_name"]
+            }
+            if selected_platform == "All Platforms":
+                row_dict["Platform"] = row["platform_name"]
+            row_dict.update({
                 "Points": f"{pts:,}",
                 "Trend": badge,
                 "Yesterday": prev,
                 "Days on Chart": f"{days}d"
             })
+            display_rows.append(row_dict)
         
         display_df = pd.DataFrame(display_rows)
-        st.write(display_df.to_html(escape=False, index=False), unsafe_allow_html=True)
+        html_table = display_df.to_html(escape=False, index=False, classes="custom-leaderboard-table")
+        st.markdown(f'''
+        <div style="background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px; overflow-x: auto; margin-bottom: 24px;">
+            {html_table}
+        </div>
+        ''', unsafe_allow_html=True)
 
     with tcol1:
         movies_df = active_df[active_df["content_type"] == "movie"]
