@@ -1,3 +1,11 @@
+import sys
+from pathlib import Path
+
+# Ensure project root is in sys.path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -298,6 +306,7 @@ with tab3:
                 r.points
             FROM rankings r
             JOIN titles t ON r.title_id = t.title_id
+            JOIN countries c ON r.country_id = c.country_id
             WHERE t.name = '{chosen_title}'
             {country_clause}
             ORDER BY r.chart_date ASC
