@@ -11,12 +11,21 @@ PLATFORM_COLORS = {
     "HBO Max": "#9900FF"
 }
 
+TYPE_COLORS = {
+    "movie": "#38bdf8",
+    "series": "#a78bfa"
+}
+
 def format_trend_badge(rank_change: Any, is_new: bool) -> str:
     """Format a clean markdown badge for rank movements."""
     if is_new or pd.isna(rank_change):
         return '<span style="color: #38bdf8; font-weight: bold; background: rgba(56, 189, 248, 0.15); padding: 2px 6px; border-radius: 4px;">★ NEW</span>'
     
-    val = int(rank_change)
+    try:
+        val = int(rank_change)
+    except (ValueError, TypeError):
+        return '<span style="color: #94a3b8; font-weight: bold; background: rgba(148, 163, 184, 0.15); padding: 2px 6px; border-radius: 4px;">— 0</span>'
+
     if val > 0:
         return f'<span style="color: #4ade80; font-weight: bold; background: rgba(74, 222, 128, 0.15); padding: 2px 6px; border-radius: 4px;">▲ +{val}</span>'
     elif val < 0:
@@ -24,24 +33,43 @@ def format_trend_badge(rank_change: Any, is_new: bool) -> str:
     else:
         return '<span style="color: #94a3b8; font-weight: bold; background: rgba(148, 163, 184, 0.15); padding: 2px 6px; border-radius: 4px;">— 0</span>'
 
-def plot_platform_share(df: pd.DataFrame) -> go.Figure:
-    """Donut chart showing share of total popularity points by platform."""
+def plot_platform_share(df: pd.DataFrame, selected_platform: str = "All Platforms") -> go.Figure:
+    """
+    Donut chart showing share of total popularity points.
+    If 'All Platforms' is selected: shows breakdown by platform.
+    If a specific platform is selected: shows breakdown by content type (Movies vs Series).
+    """
+    fig = go.Figure()
     if df.empty:
-        return go.Figure()
+        fig.update_layout(
+            title="No data available for chart",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94a3b8")
+        )
+        return fig
 
-    grouped = df.groupby("platform_name")["points"].sum().reset_index()
-    colors = [PLATFORM_COLORS.get(name, "#6366f1") for name in grouped["platform_name"]]
+    if selected_platform == "All Platforms":
+        grouped = df.groupby("platform_name")["points"].sum().reset_index()
+        colors = [PLATFORM_COLORS.get(name, "#6366f1") for name in grouped["platform_name"]]
+        labels = grouped["platform_name"]
+        chart_title = "Streaming Share of Popularity Points by Platform"
+    else:
+        grouped = df.groupby("content_type")["points"].sum().reset_index()
+        colors = [TYPE_COLORS.get(t, "#38bdf8") for t in grouped["content_type"]]
+        labels = grouped["content_type"].apply(lambda x: "Movies" if x == "movie" else "TV Series")
+        chart_title = f"{selected_platform}: Popularity by Content Type"
 
-    fig = go.Figure(data=[go.Pie(
-        labels=grouped["platform_name"],
+    fig.add_trace(go.Pie(
+        labels=labels,
         values=grouped["points"],
         hole=0.55,
         marker=dict(colors=colors, line=dict(color="#0f172a", width=2)),
         textinfo="label+percent",
         hoverinfo="label+value+percent"
-    )])
+    ))
     fig.update_layout(
-        title="Streaming Share of Popularity Points",
+        title=chart_title,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#f8fafc", family="sans-serif"),
@@ -54,9 +82,14 @@ def plot_rank_history(df: pd.DataFrame, title_name: str) -> go.Figure:
     """Line chart showing rank trajectory over time (inverted Y-axis where rank 1 is top)."""
     fig = go.Figure()
     if df.empty:
+        fig.update_layout(
+            title=f"No trajectory data available for {title_name}",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94a3b8")
+        )
         return fig
 
-    # Invert Y-axis so rank 1 is on top
     fig.add_trace(go.Scatter(
         x=df["chart_date"],
         y=df["current_rank"],
@@ -78,11 +111,24 @@ def plot_rank_history(df: pd.DataFrame, title_name: str) -> go.Figure:
     return fig
 
 def plot_points_bar(df: pd.DataFrame) -> go.Figure:
-    """Horizontal bar chart for top 10 titles by points."""
+    """Horizontal bar chart for top titles by points."""
+    fig = go.Figure()
     if df.empty:
-        return go.Figure()
+        fig.update_layout(
+            title="No title points data available",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94a3b8")
+        )
+        return fig
 
-    df_sorted = df.sort_values(by="points", ascending=True)
+    # Group by title if multiple countries are aggregated
+    if "title_name" in df.columns:
+        agg = df.groupby(["title_name", "platform_name"])["points"].sum().reset_index()
+        df_sorted = agg.sort_values(by="points", ascending=True).tail(10)
+    else:
+        df_sorted = df.sort_values(by="points", ascending=True).tail(10)
+
     fig = px.bar(
         df_sorted,
         x="points",

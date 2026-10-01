@@ -47,7 +47,10 @@ class Settings:
         p.strip() for p in os.getenv("TARGET_PLATFORMS", "netflix,amazon-prime,disney,apple-tv,hbo-max").split(",") if p.strip()
     ]
     TARGET_COUNTRIES: list[str] = [
-        c.strip() for c in os.getenv("TARGET_COUNTRIES", "world,united-states,united-kingdom,india,brazil,japan,germany").split(",") if c.strip()
+        c.strip() for c in os.getenv(
+            "TARGET_COUNTRIES", 
+            "world,united-states,united-kingdom,india,brazil,japan,germany,australia,canada,france"
+        ).split(",") if c.strip()
     ]
 
     def ensure_directories(self) -> None:

@@ -41,10 +41,13 @@ st.markdown("""
         text-transform: uppercase;
     }
     .metric-value {
-        font-size: 1.6rem;
+        font-size: 1.5rem;
         font-weight: 700;
         color: #f8fafc;
         margin-top: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .metric-delta {
         font-size: 0.85rem;
@@ -77,20 +80,21 @@ selected_date = st.sidebar.selectbox("📅 Chart Date", available_dates, index=0
 # Fetch platforms and countries
 platforms_df = db.query_df("SELECT name, slug FROM platforms ORDER BY name")
 all_platforms = ["All Platforms"] + platforms_df["name"].tolist()
-selected_platform = st.sidebar.selectbox("📺 Streaming Platform", all_platforms)
+selected_platform = st.sidebar.selectbox("📺 Streaming Platform", all_platforms, index=0)
 
 countries_df = db.query_df("SELECT name, iso_code FROM countries ORDER BY name")
-all_countries = countries_df["name"].tolist()
-default_country_idx = all_countries.index("Worldwide") if "Worldwide" in all_countries else 0
-selected_country = st.sidebar.selectbox("🌍 Country / Region", all_countries, index=default_country_idx)
+all_countries = ["All Countries"] + countries_df["name"].tolist()
+selected_country = st.sidebar.selectbox("🌍 Country / Region", all_countries, index=0)
 
 content_type_filter = st.sidebar.radio("🎞️ Content Type", ["All", "Movies Only", "TV Shows Only"])
 
 st.sidebar.markdown("---")
+scrape_live = st.sidebar.checkbox("Scrape Live FlixPatrol (requires ~30s)", value=False)
 if st.sidebar.button("🔄 Trigger Pipeline Refresh", help="Run ingestion and trend detection"):
-    with st.sidebar.status("Running pipeline...", expanded=True) as status:
+    source_mode = "hybrid" if scrape_live else "synthetic"
+    with st.sidebar.status(f"Running pipeline ({source_mode})...", expanded=True) as status:
         st.write("Ingesting Bronze layer...")
-        batch_key = run_ingestion_bronze(source="hybrid", days=1)
+        batch_key = run_ingestion_bronze(source=source_mode, days=1)
         st.write("Processing Silver & Gold layers...")
         run_processing_silver_gold(batch_key)
         status.update(label="Pipeline run complete!", state="complete", expanded=False)
@@ -101,7 +105,9 @@ platform_clause = ""
 if selected_platform != "All Platforms":
     platform_clause = f"AND p.name = '{selected_platform}'"
 
-country_clause = f"AND c.name = '{selected_country}'"
+country_clause = ""
+if selected_country != "All Countries":
+    country_clause = f"AND c.name = '{selected_country}'"
 
 type_clause = ""
 if content_type_filter == "Movies Only":
@@ -135,7 +141,7 @@ active_query = f"""
     {platform_clause}
     {country_clause}
     {type_clause}
-    ORDER BY r.rank ASC
+    ORDER BY r.rank ASC, r.points DESC
 """
 active_df = db.query_df(active_query)
 
@@ -145,6 +151,10 @@ st.markdown(
     f"Tracking popularity shifts, day-over-day rank delta, and chart endurance across "
     f"**{selected_platform}** in **{selected_country}** on **{selected_date}**."
 )
+
+if active_df.empty:
+    st.warning("⚠️ No records found for the selected filter combination. Try selecting **All Platforms** or **All Countries**.")
+    st.stop()
 
 # Tabs
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
@@ -159,31 +169,30 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # TAB 1: GLOBAL TREND PULSE
 # ==============================================================================
 with tab1:
-    # High-level KPIs
     col1, col2, col3, col4 = st.columns(4)
 
-    # Top Movie
-    top_movie = active_df[active_df["content_type"] == "movie"]
-    top_movie_title = top_movie.iloc[0]["title_name"] if not top_movie.empty else "N/A"
-    top_movie_plat = top_movie.iloc[0]["platform_name"] if not top_movie.empty else ""
+    # Top Movie (by rank or highest points)
+    movie_candidates = active_df[active_df["content_type"] == "movie"].sort_values(by=["current_rank", "points"], ascending=[True, False])
+    top_movie_title = movie_candidates.iloc[0]["title_name"] if not movie_candidates.empty else "N/A"
+    top_movie_plat = movie_candidates.iloc[0]["platform_name"] if not movie_candidates.empty else ""
     with col1:
         st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-title">🥇 #1 Movie Today</div>
-            <div class="metric-value">{top_movie_title[:20]}</div>
+            <div class="metric-title">🥇 Top Movie Today</div>
+            <div class="metric-value">{top_movie_title}</div>
             <div class="metric-delta" style="color: #38bdf8;">{top_movie_plat}</div>
         </div>
         """, unsafe_allow_html=True)
 
     # Top Series
-    top_series = active_df[active_df["content_type"] == "series"]
-    top_series_title = top_series.iloc[0]["title_name"] if not top_series.empty else "N/A"
-    top_series_plat = top_series.iloc[0]["platform_name"] if not top_series.empty else ""
+    series_candidates = active_df[active_df["content_type"] == "series"].sort_values(by=["current_rank", "points"], ascending=[True, False])
+    top_series_title = series_candidates.iloc[0]["title_name"] if not series_candidates.empty else "N/A"
+    top_series_plat = series_candidates.iloc[0]["platform_name"] if not series_candidates.empty else ""
     with col2:
         st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-title">📺 #1 TV Series Today</div>
-            <div class="metric-value">{top_series_title[:20]}</div>
+            <div class="metric-title">📺 Top TV Series Today</div>
+            <div class="metric-value">{top_series_title}</div>
             <div class="metric-delta" style="color: #a78bfa;">{top_series_plat}</div>
         </div>
         """, unsafe_allow_html=True)
@@ -196,7 +205,7 @@ with tab1:
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-title">🚀 Fastest Climber</div>
-            <div class="metric-value">{top_gainer_title[:20]}</div>
+            <div class="metric-value">{top_gainer_title}</div>
             <div class="metric-delta" style="color: #4ade80;">▲ {top_gainer_delta}</div>
         </div>
         """, unsafe_allow_html=True)
@@ -209,7 +218,7 @@ with tab1:
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-title">👑 Endurance Leader</div>
-            <div class="metric-value">{top_streak_title[:20]}</div>
+            <div class="metric-value">{top_streak_title}</div>
             <div class="metric-delta" style="color: #facc15;">⏱️ {top_streak_days} in Top 10</div>
         </div>
         """, unsafe_allow_html=True)
@@ -217,9 +226,9 @@ with tab1:
     # Visualizations Row
     chart_col1, chart_col2 = st.columns([1, 1.2])
     with chart_col1:
-        st.plotly_chart(plot_platform_share(active_df), use_container_width=True)
+        st.plotly_chart(plot_platform_share(active_df, selected_platform), use_container_width=True)
     with chart_col2:
-        st.plotly_chart(plot_points_bar(active_df.head(10)), use_container_width=True)
+        st.plotly_chart(plot_points_bar(active_df), use_container_width=True)
 
 # ==============================================================================
 # TAB 2: TOP 10 LEADERBOARDS
@@ -234,18 +243,36 @@ with tab2:
             st.info("No titles match current filter criteria.")
             return
 
+        # If All Countries selected, group by title to avoid repeated rows
+        if selected_country == "All Countries":
+            grouped = sub_df.groupby(["title_name", "platform_name"]).agg({
+                "points": "sum",
+                "current_rank": "min",
+                "previous_rank": "min",
+                "rank_change": "max",
+                "days_in_top_10": "max",
+                "is_new_entry": "min"
+            }).reset_index().sort_values(by=["current_rank", "points"], ascending=[True, False])
+            items_to_render = grouped.head(10)
+        else:
+            items_to_render = sub_df.sort_values(by="current_rank", ascending=True).head(10)
+
         display_rows = []
-        for _, row in sub_df.head(10).iterrows():
-            badge = format_trend_badge(row["rank_change"], bool(row["is_new_entry"]))
-            prev = f"#{int(row['previous_rank'])}" if pd.notna(row["previous_rank"]) else "Debut"
+        for _, row in items_to_render.iterrows():
+            badge = format_trend_badge(row.get("rank_change"), bool(row.get("is_new_entry", 0)))
+            prev = f"#{int(row['previous_rank'])}" if pd.notna(row.get("previous_rank")) else "Debut"
+            days = int(row["days_in_top_10"]) if pd.notna(row.get("days_in_top_10")) else 1
+            pts = int(row["points"]) if pd.notna(row.get("points")) else 0
+            cur_rank = int(row["current_rank"]) if pd.notna(row.get("current_rank")) else 1
+            
             display_rows.append({
-                "Rank": f"#{int(row['current_rank'])}",
+                "Rank": f"#{cur_rank}",
                 "Title": row["title_name"],
                 "Platform": row["platform_name"],
-                "Points": f"{int(row['points']):,}",
+                "Points": f"{pts:,}",
                 "Trend": badge,
                 "Yesterday": prev,
-                "Days on Chart": f"{int(row['days_in_top_10'])}d"
+                "Days on Chart": f"{days}d"
             })
         
         display_df = pd.DataFrame(display_rows)
@@ -268,13 +295,13 @@ with tab3:
     mcol1, mcol2 = st.columns(2)
     with mcol1:
         st.markdown("#### 🚀 Biggest Positive Climbers")
-        climbers = active_df[active_df["rank_change"] > 0].sort_values(by="rank_change", ascending=False)
+        climbers = active_df[active_df["rank_change"] > 0].sort_values(by="rank_change", ascending=False).drop_duplicates(subset=["title_name"])
         if climbers.empty:
             st.info("No titles gained rank on this chart date.")
         else:
             st.dataframe(
                 climbers[["title_name", "platform_name", "content_type", "previous_rank", "current_rank", "rank_change", "days_in_top_10"]].rename(
-                    columns={"title_name": "Title", "platform_name": "Platform", "previous_rank": "Was", "current_rank": "Now", "rank_change": "Climbed (+)"}
+                    columns={"title_name": "Title", "platform_name": "Platform", "content_type": "Type", "previous_rank": "Was", "current_rank": "Now", "rank_change": "Climbed (+)", "days_in_top_10": "Days on Chart"}
                 ),
                 use_container_width=True,
                 hide_index=True
@@ -282,13 +309,13 @@ with tab3:
 
     with mcol2:
         st.markdown("#### 🔻 Steepest Drops")
-        droppers = active_df[active_df["rank_change"] < 0].sort_values(by="rank_change", ascending=True)
+        droppers = active_df[active_df["rank_change"] < 0].sort_values(by="rank_change", ascending=True).drop_duplicates(subset=["title_name"])
         if droppers.empty:
             st.info("No titles dropped rank on this chart date.")
         else:
             st.dataframe(
                 droppers[["title_name", "platform_name", "content_type", "previous_rank", "current_rank", "rank_change", "days_in_top_10"]].rename(
-                    columns={"title_name": "Title", "platform_name": "Platform", "previous_rank": "Was", "current_rank": "Now", "rank_change": "Fell (-)"}
+                    columns={"title_name": "Title", "platform_name": "Platform", "content_type": "Type", "previous_rank": "Was", "current_rank": "Now", "rank_change": "Fell (-)", "days_in_top_10": "Days on Chart"}
                 ),
                 use_container_width=True,
                 hide_index=True
@@ -302,13 +329,14 @@ with tab3:
         hist_query = f"""
             SELECT 
                 r.chart_date,
-                r.rank AS current_rank,
-                r.points
+                ROUND(AVG(r.rank), 1) AS current_rank,
+                SUM(r.points) AS points
             FROM rankings r
             JOIN titles t ON r.title_id = t.title_id
             JOIN countries c ON r.country_id = c.country_id
             WHERE t.name = '{chosen_title}'
             {country_clause}
+            GROUP BY r.chart_date
             ORDER BY r.chart_date ASC
         """
         hist_df = db.query_df(hist_query)
