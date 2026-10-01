@@ -92,18 +92,44 @@ st.sidebar.image("https://img.icons8.com/color/96/movie-projector.png", width=64
 st.sidebar.title("🎬 Trend Intelligence")
 st.sidebar.markdown(f"**Database:** `{'Neon PostgreSQL' if db.is_postgres else 'SQLite (Local)'}`")
 
-# Fetch available dates
-dates_df = db.query_df("SELECT DISTINCT chart_date FROM rankings ORDER BY chart_date DESC")
+def ensure_database_ready():
+    """Ensure database schema, dimensions, and initial data exist on cloud startup."""
+    try:
+        df = db.query_df("SELECT DISTINCT chart_date FROM rankings ORDER BY chart_date DESC")
+        if not df.empty:
+            return df
+    except Exception:
+        pass
+
+    # Initialize schema, dimensions, and starter data
+    try:
+        db.init_schema()
+        db.seed_initial_dimensions()
+        from run_pipeline import run_ingestion_bronze, run_processing_silver_gold
+        batch_key = run_ingestion_bronze(source="synthetic", days=7)
+        run_processing_silver_gold(batch_key)
+        return db.query_df("SELECT DISTINCT chart_date FROM rankings ORDER BY chart_date DESC")
+    except Exception as e:
+        return pd.DataFrame([{"chart_date": datetime.now().strftime("%Y-%m-%d")}])
+
+# Fetch available dates (auto-healing on cloud if uninitialized)
+dates_df = ensure_database_ready()
 available_dates = dates_df["chart_date"].astype(str).tolist() if not dates_df.empty else [datetime.now().strftime("%Y-%m-%d")]
 
 selected_date = st.sidebar.selectbox("📅 Chart Date", available_dates, index=0)
 
 # Fetch platforms and countries
 platforms_df = db.query_df("SELECT name, slug FROM platforms ORDER BY name")
+if platforms_df.empty:
+    db.seed_initial_dimensions()
+    platforms_df = db.query_df("SELECT name, slug FROM platforms ORDER BY name")
 all_platforms = ["All Platforms"] + platforms_df["name"].tolist()
 selected_platform = st.sidebar.selectbox("📺 Streaming Platform", all_platforms, index=0)
 
 countries_df = db.query_df("SELECT name, iso_code FROM countries ORDER BY name")
+if countries_df.empty:
+    db.seed_initial_dimensions()
+    countries_df = db.query_df("SELECT name, iso_code FROM countries ORDER BY name")
 all_countries = ["All Countries"] + countries_df["name"].tolist()
 selected_country = st.sidebar.selectbox("🌍 Country / Region", all_countries, index=0)
 

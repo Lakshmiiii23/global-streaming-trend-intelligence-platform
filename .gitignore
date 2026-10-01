@@ -60,5 +60,6 @@ Thumbs.db
 
 # Database files
 *.db
+!data/streaming_intelligence.db
 *.sqlite
 *.sqlite3
