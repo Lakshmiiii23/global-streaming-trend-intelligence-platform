@@ -23,6 +23,9 @@ on:
         required: false
         default: '7'
 
+permissions:
+  contents: write
+
 jobs:
   run-pipeline:
     name: Ingest, Process & Load Streaming Data
@@ -31,6 +34,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -56,15 +61,28 @@ jobs:
       - name: Run End-to-End Pipeline
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          STORAGE_BACKEND: ${{ secrets.STORAGE_BACKEND || 'local' }}
+          STORAGE_BACKEND: ${{ secrets.STORAGE_BACKEND }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || 'streaming-trends-bronze' }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           ENVIRONMENT: 'production'
           LOG_LEVEL: 'INFO'
+          INPUT_SOURCE: ${{ github.event.inputs.source }}
+          INPUT_DAYS: ${{ github.event.inputs.days }}
         run: |
-          xvfb-run python run_pipeline.py --mode=all --source=${{ inputs.source || 'hybrid' }} --days=${{ inputs.days || 7 }}
+          SOURCE="${INPUT_SOURCE:-hybrid}"
+          DAYS="${INPUT_DAYS:-7}"
+          echo "Executing pipeline with SOURCE=$SOURCE and DAYS=$DAYS"
+          xvfb-run python run_pipeline.py --mode=all --source="$SOURCE" --days="$DAYS"
+
+      - name: Commit and Push Updated Intelligence Database
+        if: success()
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/streaming_intelligence.db data/bronze/
+          git diff --staged --quiet || (git commit -m "chore: automated daily streaming intelligence data refresh [skip ci]" && git push origin main)
 
       - name: Upload Ingestion Artifacts (if local storage)
         uses: actions/upload-artifact@v4

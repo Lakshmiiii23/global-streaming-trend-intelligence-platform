@@ -22,7 +22,7 @@ class DatabaseManager:
     """
 
     def __init__(self, database_url: Optional[str] = None):
-        self.url = database_url or settings.DATABASE_URL
+        self.url = database_url or settings.DATABASE_URL or f"sqlite:///{settings.BASE_DIR / 'data' / 'streaming_intelligence.db'}"
         # In modern SQLAlchemy, postgres:// must be postgresql://
         if self.url.startswith("postgres://"):
             self.url = self.url.replace("postgres://", "postgresql://", 1)

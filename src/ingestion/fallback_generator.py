@@ -5,77 +5,249 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Curated catalogue of realistic major streaming titles across platforms
-SAMPLE_CATALOGUE = {
+# Comprehensive, culturally authentic catalogues by country and platform
+GLOBAL_CATALOGUE = {
     "netflix": {
         "movies": [
-            "Irumudi", "Vishwanath & Sons", "Modha Rathri", "Baby Do Die Do",
-            "Demon Slayer: Kimetsu no Yaiba Infinity Castle", "Lust Stories 3", 
-            "UNABOMBER", "Dhamaal 4", "Gandhari", "G.D.N"
+            "Rebel Ridge", "The Union", "Uglies", "His Three Daughters", 
+            "Beverly Hills Cop: Axel F", "Bad Boys: Ride or Die", "The Deliverance", 
+            "Incoming", "A Family Affair", "Trigger Warning", "Hit Man", "Atlas"
         ],
         "series": [
-            "The Great Indian Kapil Show", "Shaque: Trust No One", "Raw", 
-            "Chumbak", "Zakir Khan: Papa Yaar", "Musafir Cafe", 
-            "Operation Safed Sagar: The Untold Story of the Kargil War", 
-            "India's Got Latent", "The Final Problem", "LEGO ONE PIECE"
+            "Monsters: The Lyle and Erik Menendez Story", "Nobody Wants This", 
+            "The Perfect Couple", "Outer Banks", "Kaos", "Emily in Paris", 
+            "Love Next Door", "Worst Ex Ever", "American Murder: Laci Peterson", "Dark Winds", "Baby Reindeer", "Supacell"
         ]
     },
     "amazon-prime": {
         "movies": [
-            "The Love Hypothesis", "Ramba Oorvasi Menaka", "Ram and Leela", 
-            "Don't Be Shy!", "Monster Island", "The Death of Robin Hood", 
-            "Karmakhya", "Deewana", "Magudam", "Photographer"
+            "The Idea of You", "Jackpot!", "Road House", "Civil War", 
+            "Challengers", "The Beekeeper", "Boy Kills World", "American Fiction", 
+            "The Ministry of Ungentlemanly Warfare", "Arthur the King", "Musica", "Upgraded"
         ],
         "series": [
-            "Rise and Fall", "Waiting Hai", "The Love Hypothesis", 
-            "Ramba Oorvasi Menaka", "Neagley", "The Revolutionaries", 
-            "Ram and Leela", "Reacher", "Don't Be Shy!", "Monster Island"
+            "The Boys", "The Lord of the Rings: The Rings of Power", "Fallout", 
+            "Reacher", "Mr. & Mrs. Smith", "Hazbin Hotel", "Invincible", 
+            "The Summer I Turned Pretty", "Gen V", "The Wheel of Time", "Outer Range", "Bosch: Legacy"
         ]
     },
     "disney": {
         "movies": [
-            "Inside Out 2", "Deadpool & Wolverine", "Moana", "Wish", 
-            "Guardians of the Galaxy Vol. 3", "Encanto", "Avatar: The Way of Water", 
-            "The Little Mermaid", "Elemental", "Frozen II"
+            "Deadpool & Wolverine", "Inside Out 2", "Kingdom of the Planet of the Apes", 
+            "Moana", "Wish", "Elemental", "Avatar: The Way of Water", 
+            "Guardians of the Galaxy Vol. 3", "Haunted Mansion", "The Marvels", "Taylor Swift: The Eras Tour", "Turning Red"
         ],
         "series": [
-            "Shogun", "The Bear", "Loki", "The Mandalorian", 
-            "Percy Jackson and the Olympians", "Ahsoka", "Agatha All Along", 
-            "Only Murders in the Building", "Bluey", "X-Men '97"
+            "Agatha All Along", "The Bear", "Shogun", "Loki", 
+            "Percy Jackson and the Olympians", "Only Murders in the Building", 
+            "The Acolyte", "X-Men '97", "Star Wars: The Bad Batch", "Echo", "Bluey", "Ahsoka"
         ]
     },
     "apple-tv": {
         "movies": [
-            "Killers of the Flower Moon", "Napoleon", "The Instigators", 
-            "Fly Me to the Moon", "CODA", "Tetris", "Ghosted", 
-            "Greyhound", "Palmer", "Spirited"
+            "The Instigators", "Wolfs", "Fly Me to the Moon", "Killers of the Flower Moon", 
+            "Napoleon", "CODA", "Tetris", "Ghosted", "Argylle", "The Family Plan", "Greyhound", "Palmer"
         ],
         "series": [
-            "Severance", "Ted Lasso", "Slow Horses", "The Morning Show", 
-            "Foundation", "For All Mankind", "Silo", "Presumed Innocent", 
-            "Bad Sisters", "Pachinko"
+            "Slow Horses", "Bad Monkey", "Presumed Innocent", "Severance", 
+            "The Morning Show", "Ted Lasso", "Silo", "Pachinko", "Dark Matter", "Palm Royale", "Foundation", "Sugar"
         ]
     },
     "hbo-max": {
         "movies": [
-            "Dune: Part Two", "Barbie", "Wonka", "Godzilla x Kong: The New Empire", 
-            "Furiosa: A Mad Max Saga", "The Batman", "Oppenheimer", 
-            "Aquaman and the Lost Kingdom", "Civil War", "Trap"
+            "Dune: Part Two", "Furiosa: A Mad Max Saga", "Barbie", 
+            "Godzilla x Kong: The New Empire", "Wonka", "Twisters", "Trap", 
+            "The Watchers", "Aquaman and the Lost Kingdom", "The Batman", "Civil War", "Oppenheimer"
         ],
         "series": [
-            "House of the Dragon", "The Last of Us", "Succession", "The White Lotus", 
-            "Euphoria", "True Detective: Night Country", "The Penguin", 
-            "Hacks", "Industry", "Tokyo Vice"
+            "The Penguin", "House of the Dragon", "The Last of Us", "Succession", 
+            "The White Lotus", "True Detective: Night Country", "Hacks", "Industry", 
+            "Euphoria", "Curb Your Enthusiasm", "Tokyo Vice", "The Sympathizer"
         ]
+    }
+}
+
+COUNTRY_SPECIFIC_CATALOGUES = {
+    "india": {
+        "netflix": {
+            "movies": [
+                "Sector 36", "Maharaja", "Phir Aayi Hasseen Dillruba", "Kalki 2898 AD", 
+                "Amar Singh Chamkila", "Dunki", "Jawan", "Animal", "Laapataa Ladies", "Bhakshak", "Crew", "Bade Miyan Chote Miyan"
+            ],
+            "series": [
+                "The Great Indian Kapil Show", "IC 814: The Kandahar Hijack", 
+                "Tribhuvan Mishra CA Topper", "Kota Factory", "Heeramandi: The Diamond Bazaar", 
+                "Maamla Legal Hai", "Killer Soup", "The Railway Men", "Guns & Gulaabs", "Delhi Crime", "Kohrrha", "Scoop"
+            ]
+        },
+        "amazon-prime": {
+            "movies": [
+                "Chandu Champion", "Garudan", "Yodha", "Teri Baaton Mein Aisa Uljha Jiya", 
+                "Captain Miller", "Aavesham", "Varshangalkku Shesham", "Turbo", "Raayan", "Aanandhapuram Diaries", "Panchayat", "Tiger 3"
+            ],
+            "series": [
+                "Mirzapur", "Panchayat", "The Family Man", "Farzi", 
+                "Made in Heaven", "Jubilee", "Breathe: Into the Shadows", 
+                "Poacher", "Indian Police Force", "Dahaad", "Bambai Meri Jaan", "Call Me Bae"
+            ]
+        },
+        "disney": {
+            "movies": [
+                "Premalu", "Manjummel Boys", "Bramayugam", "Hanu-Man", 
+                "Abraham Ozler", "Siren", "Lover", "Heart of Stone", 
+                "Guardians of the Galaxy Vol. 3", "Deadpool & Wolverine", "Salaar", "Brahmastra"
+            ],
+            "series": [
+                "Taaza Khabar", "Aarya", "Special Ops", "The Night Manager", 
+                "Criminal Justice", "Showstopper", "Gunaah", "Lootere", "Karmma Calling", "City of Dreams", "Rudra", "Dahan"
+            ]
+        }
+    },
+    "united-kingdom": {
+        "netflix": {
+            "movies": [
+                "Rebel Ridge", "The Union", "Bank of Dave", "Uglies", "His Three Daughters", 
+                "Beverly Hills Cop: Axel F", "Bad Boys: Ride or Die", "The Deliverance", "Scoop", "Trigger Warning", "Hit Man", "Saltburn"
+            ],
+            "series": [
+                "Baby Reindeer", "One Day", "Fool Me Once", "The Gentlemen", "Supacell", 
+                "Monsters: The Lyle and Erik Menendez Story", "Nobody Wants This", "The Perfect Couple", "Sex Education", "Top Boy", "Trigger Point", "Slow Horses"
+            ]
+        },
+        "amazon-prime": {
+            "movies": [
+                "Road House", "The Beekeeper", "Saltburn", "Civil War", "The Idea of You", 
+                "Jackpot!", "Challengers", "The Ministry of Ungentlemanly Warfare", "Arthur the King", "American Fiction", "Boy Kills World", "My Policeman"
+            ],
+            "series": [
+                "The Rig", "The Boys", "The Lord of the Rings: The Rings of Power", "Fallout", 
+                "Clarkson's Farm", "Reacher", "Mr. & Mrs. Smith", "Hazbin Hotel", "The Devils Hour", "Good Omens", "The Wheel of Time", "Mammals"
+            ]
+        }
+    },
+    "japan": {
+        "netflix": {
+            "movies": [
+                "City Hunter", "Zom 100: Bucket List of the Dead", "Demon Slayer: To the Hashira Training", 
+                "Godzilla Minus One", "In Love and Deep Water", "Monster", "Rebel Ridge", "The Union", 
+                "The Parades", "Alice in Borderland: The Movie", "Sailor Moon Cosmos", "Drawing Closer"
+            ],
+            "series": [
+                "Demon Slayer", "Kaiju No. 8", "Dan Da Dan", "My Hero Academia", "Oshi no Ko", 
+                "Tokyo Swindlers", "Jujutsu Kaisen", "The Apothecary Diaries", "Frieren: Beyond Journey's End", 
+                "Yu Yu Hakusho", "House of Ninjas", "Alice in Borderland"
+            ]
+        },
+        "amazon-prime": {
+            "movies": [
+                "Shin Kamen Rider", "Shin Evangelion", "Godzilla Minus One", "Silent Service", 
+                "Challengers", "Road House", "The Beekeeper", "Civil War", "The Idea of You", "Jackpot!", "Lumberjack Monster", "Rohan at the Louvre"
+            ],
+            "series": [
+                "The Silent Service", "No Activity", "The Boys", "The Lord of the Rings: The Rings of Power", 
+                "Fallout", "Reacher", "Evangelion: 3.0+1.0", "Hitoshi Matsumoto Documental", "Hazbin Hotel", "Baki Hanma", "Invincible", "The Wheel of Time"
+            ]
+        }
+    },
+    "brazil": {
+        "netflix": {
+            "movies": [
+                "Biônicos", "Pedaço de Mim", "Carga Máxima", "Ricos de Amor 2", "Vizinhos", 
+                "Rebel Ridge", "The Union", "Uglies", "His Three Daughters", "De Volta aos 15", "Carnaval", "Esposa de Aluguel"
+            ],
+            "series": [
+                "Senna", "Pedaço de Mim", "Sintonia", "Bom Dia, Verônica", "DNA do Crime", 
+                "De Volta aos 15", "Cidade Invisível", "Olhar Indiscreto", "Monsters: The Lyle and Erik Menendez Story", 
+                "Nobody Wants This", "The Perfect Couple", "Emily in Paris"
+            ]
+        },
+        "amazon-prime": {
+            "movies": [
+                "O Sequestro do Voo 375", "Maníaco do Parque", "Meninas Não Choram", "Um Ano Inesquecível", 
+                "Road House", "The Beekeeper", "Civil War", "The Idea of You", "Jackpot!", "Challengers", "American Fiction", "The Ministry of Ungentlemanly Warfare"
+            ],
+            "series": [
+                "Dom", "Cangaço Novo", "Impuros", "Soltos em Floripa", "The Boys", 
+                "The Lord of the Rings: The Rings of Power", "Fallout", "Reacher", "Mr. & Mrs. Smith", "Hazbin Hotel", "Invincible", "The Summer I Turned Pretty"
+            ]
+        }
+    },
+    "germany": {
+        "netflix": {
+            "movies": [
+                "60 Minutes", "Blood & Gold", "Hard Feelings", "Paradise", "All Quiet on the Western Front", 
+                "Rebel Ridge", "The Union", "Uglies", "His Three Daughters", "Buba", "Army of Thieves", "Black Island"
+            ],
+            "series": [
+                "Maxton Hall", "Crooks", "Dark", "Dear Child", "The Empress", "Kleo", 
+                "1899", "Biohackers", "Monsters: The Lyle and Erik Menendez Story", "Nobody Wants This", "The Perfect Couple", "Babylon Berlin"
+            ]
+        },
+        "amazon-prime": {
+            "movies": [
+                "Silber und das Buch der Träume", "Sachertorte", "Road House", "The Beekeeper", 
+                "Civil War", "The Idea of You", "Jackpot!", "Challengers", "American Fiction", "The Ministry of Ungentlemanly Warfare", "Arthur the King", "Boy Kills World"
+            ],
+            "series": [
+                "Maxton Hall: Die Welt zwischen uns", "Luden", "Die Discounter", "The Boys", 
+                "The Lord of the Rings: The Rings of Power", "Fallout", "Reacher", "Mr. & Mrs. Smith", "Hazbin Hotel", "Invincible", "The Summer I Turned Pretty", "Gen V"
+            ]
+        }
+    },
+    "france": {
+        "netflix": {
+            "movies": [
+                "Under Paris", "The Wages of Fear", "AKA", "Athena", "Lost Bullet 2", 
+                "Rebel Ridge", "The Union", "Uglies", "His Three Daughters", "Restless", "Oxygen", "Bigbug"
+            ],
+            "series": [
+                "Lupin", "Furies", "Anthracite", "Billionaire Island", "Family Business", 
+                "The Eddy", "En Place", "Black Butterflies", "Pax Massilia", "Monsters: The Lyle and Erik Menendez Story", "Nobody Wants This", "The Perfect Couple"
+            ]
+        },
+        "amazon-prime": {
+            "movies": [
+                "Medellin", "Le Bal des Folles", "Road House", "The Beekeeper", "Civil War", 
+                "The Idea of You", "Jackpot!", "Challengers", "American Fiction", "The Ministry of Ungentlemanly Warfare", "Arthur the King", "Overdose"
+            ],
+            "series": [
+                "Coeurs Noirs", "Totems", "Miskina", "The Boys", "The Lord of the Rings: The Rings of Power", 
+                "Fallout", "Reacher", "Mr. & Mrs. Smith", "Hazbin Hotel", "Invincible", "The Summer I Turned Pretty", "Gen V"
+            ]
+        }
+    },
+    "australia": {
+        "netflix": {
+            "movies": [
+                "Boy Swallows Universe", "A Sunburnt Christmas", "Rebel Ridge", "The Union", 
+                "Uglies", "His Three Daughters", "Beverly Hills Cop: Axel F", "Bad Boys: Ride or Die", "The Deliverance", "The Dry", "True History of the Kelly Gang", "Furiosa"
+            ],
+            "series": [
+                "Boy Swallows Universe", "Heartbreak High", "Wellmania", "Monsters: The Lyle and Erik Menendez Story", 
+                "Nobody Wants This", "The Perfect Couple", "Surviving Summer", "Colin from Accounts", "The Newsreader", "Deadloch", "Bluey", "Slow Horses"
+            ]
+        }
+    },
+    "canada": {
+        "netflix": {
+            "movies": [
+                "Rebel Ridge", "The Union", "BlackBerry", "Uglies", "His Three Daughters", 
+                "Beverly Hills Cop: Axel F", "Bad Boys: Ride or Die", "The Deliverance", "Code 8 Part II", "Dune: Part Two", "Hit Man", "Atlas"
+            ],
+            "series": [
+                "Schitt's Creek", "Kim's Convenience", "Letterkenny", "Shoresy", 
+                "Monsters: The Lyle and Erik Menendez Story", "Nobody Wants This", "The Perfect Couple", "The Bear", "The Boys", "Fargo", "Heartland", "Trailer Park Boys"
+            ]
+        }
     }
 }
 
 class StreamingDataGenerator:
     """
-    High-fidelity streaming chart data generator.
+    High-fidelity, culturally localized streaming chart data generator.
     
     Provides:
-    1. Realistic daily Top 10 data across platforms and countries.
+    1. Realistic daily Top 10 data across platforms and countries with authentic localized titles.
     2. Multi-day historical data simulation to power day-over-day rank delta calculations
        and endurance streak metrics in the Silver layer.
     3. Seamless fallback when external sites are unreachable or rate-limited.
@@ -83,6 +255,27 @@ class StreamingDataGenerator:
 
     def __init__(self, seed: int = 42):
         self.random = random.Random(seed)
+
+    def get_titles_pool(self, platform: str, country: str, content_type: str) -> List[str]:
+        """Resolve localized titles pool for a specific country and platform."""
+        ctry_key = country.lower().strip()
+        plat_key = platform.lower().strip()
+        type_key = "movies" if content_type == "movie" else "series"
+
+        # 1. Try country-specific platform catalogue
+        if ctry_key in COUNTRY_SPECIFIC_CATALOGUES and plat_key in COUNTRY_SPECIFIC_CATALOGUES[ctry_key]:
+            pool = COUNTRY_SPECIFIC_CATALOGUES[ctry_key][plat_key].get(type_key, [])
+            if pool:
+                return pool
+
+        # 2. Try global catalogue for platform
+        if plat_key in GLOBAL_CATALOGUE:
+            pool = GLOBAL_CATALOGUE[plat_key].get(type_key, [])
+            if pool:
+                return pool
+
+        # 3. Fallback to Netflix global
+        return GLOBAL_CATALOGUE["netflix"].get(type_key, [])
 
     def generate_chart(
         self, 
@@ -92,11 +285,10 @@ class StreamingDataGenerator:
         content_type: str
     ) -> List[Dict[str, Any]]:
         """Generate a single Top 10 list for a platform, country, and date."""
-        plat_data = SAMPLE_CATALOGUE.get(platform, SAMPLE_CATALOGUE["netflix"])
-        titles_pool = plat_data.get("movies" if content_type == "movie" else "series", [])
+        titles_pool = self.get_titles_pool(platform, country, content_type)
 
-        # Deterministically shuffle titles based on date and platform
-        date_hash = int(hash(f"{chart_date}_{platform}_{country}_{content_type}") % 10000)
+        # Deterministically shuffle titles based on date, platform, country, and type
+        date_hash = int(abs(hash(f"{chart_date}_{platform}_{country}_{content_type}")) % 100000)
         rng = random.Random(date_hash)
         shuffled = list(titles_pool)
         rng.shuffle(shuffled)

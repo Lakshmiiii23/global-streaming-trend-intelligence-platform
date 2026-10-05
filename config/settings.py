@@ -16,14 +16,14 @@ class Settings:
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
     # Storage Configuration (Cloudflare R2 or Local)
-    STORAGE_BACKEND: str = os.getenv("STORAGE_BACKEND", "local").lower()
-    R2_ACCOUNT_ID: str = os.getenv("R2_ACCOUNT_ID", "")
-    R2_ACCESS_KEY_ID: str = os.getenv("R2_ACCESS_KEY_ID", "")
-    R2_SECRET_ACCESS_KEY: str = os.getenv("R2_SECRET_ACCESS_KEY", "")
-    R2_BUCKET_NAME: str = os.getenv("R2_BUCKET_NAME", "streaming-trends-bronze")
+    STORAGE_BACKEND: str = (os.getenv("STORAGE_BACKEND") or "local").lower()
+    R2_ACCOUNT_ID: str = os.getenv("R2_ACCOUNT_ID") or ""
+    R2_ACCESS_KEY_ID: str = os.getenv("R2_ACCESS_KEY_ID") or ""
+    R2_SECRET_ACCESS_KEY: str = os.getenv("R2_SECRET_ACCESS_KEY") or ""
+    R2_BUCKET_NAME: str = os.getenv("R2_BUCKET_NAME") or "streaming-trends-bronze"
     R2_ENDPOINT_URL: str = os.getenv(
         "R2_ENDPOINT_URL", 
-        f"https://{os.getenv('R2_ACCOUNT_ID', '')}.r2.cloudflarestorage.com"
+        f"https://{os.getenv('R2_ACCOUNT_ID') or ''}.r2.cloudflarestorage.com"
     )
     
     # Local Data Directories
@@ -32,8 +32,8 @@ class Settings:
     GOLD_DIR: Path = BASE_DIR / "data" / "gold"
     
     # Database Configuration (Neon PostgreSQL with SQLite local fallback)
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL", 
+    DATABASE_URL: str = (
+        os.getenv("DATABASE_URL") or 
         f"sqlite:///{BASE_DIR / 'data' / 'streaming_intelligence.db'}"
     )
     

@@ -46,8 +46,8 @@ def run_ingestion_bronze(
     records: List[Dict[str, Any]] = []
     
     # Resolve target platforms and countries
-    target_platforms = platforms or ["netflix", "amazon-prime"]
-    target_countries = countries or ["india", "united-states", "world"]
+    target_platforms = platforms or settings.TARGET_PLATFORMS
+    target_countries = countries or settings.TARGET_COUNTRIES
     
     if source in ("live", "hybrid"):
         logger.info("Attempting live scrape via Camoufox on FlixPatrol for %s in %s...", target_platforms, target_countries)
@@ -65,23 +65,38 @@ def run_ingestion_bronze(
         except Exception as e:
             logger.error("Live scraping encountered an error: %s", e)
 
+    generator = StreamingDataGenerator()
+    chart_date = datetime.now().strftime("%Y-%m-%d")
+
     if not records:
         if source == "live":
             logger.warning("Live scraping returned 0 records. Preserving existing database records without overwriting.")
             return None
         logger.info("Utilizing resilient streaming generator fallback to ensure pipeline continuity...")
-        generator = StreamingDataGenerator()
-        fallback_plats = target_platforms if target_platforms else settings.TARGET_PLATFORMS
-        fallback_ctrys = target_countries if target_countries else settings.TARGET_COUNTRIES
         records = generator.generate_history(
-            platforms=fallback_plats,
-            countries=fallback_ctrys,
+            platforms=target_platforms,
+            countries=target_countries,
             days=days
         )
         logger.info("Generated %d fallback streaming records.", len(records))
+    elif source == "hybrid":
+        # Check which platform-country-type combinations were missed by scraper and supplement them
+        scraped_pairs = {(r["platform"], r["country"], r["content_type"]) for r in records}
+        missing_records = []
+        for p in target_platforms:
+            for c in target_countries:
+                for ctype in ["movie", "series"]:
+                    p_clean = p.lower().strip()
+                    c_clean = c.lower().strip()
+                    if (p_clean, c_clean, ctype) not in scraped_pairs:
+                        missing_records.extend(
+                            generator.generate_chart(p_clean, c_clean, chart_date, ctype)
+                        )
+        if missing_records:
+            logger.info("Hybrid mode: supplemented %d records for missing platform/country combinations.", len(missing_records))
+            records.extend(missing_records)
 
     batch_id = str(uuid.uuid4())[:8]
-    chart_date = datetime.now().strftime("%Y-%m-%d")
     batch_key = storage.save_batch(records, batch_id=batch_id, chart_date=chart_date)
     logger.info("Bronze ingestion complete. Batch key: %s", batch_key)
     return batch_key
