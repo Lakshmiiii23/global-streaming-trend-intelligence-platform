@@ -39,6 +39,7 @@ ENV/
 *.html
 tests/test_*.html
 tests/scratch/
+scratch/
 camoufox_result.html
 flixpatrol_*.html
 
