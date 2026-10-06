@@ -71,35 +71,38 @@ COUNTRY_SPECIFIC_CATALOGUES = {
     "india": {
         "netflix": {
             "movies": [
-                "Sector 36", "Maharaja", "Phir Aayi Hasseen Dillruba", "Kalki 2898 AD", 
-                "Amar Singh Chamkila", "Dunki", "Jawan", "Animal", "Laapataa Ladies", "Bhakshak", "Crew", "Bade Miyan Chote Miyan"
+                "Vishwanath & Sons", "Irumudi", "Romanchakam", "Modha Rathri", 
+                "Ohh My Dog", "Baby Do Die Do", "Lust Stories 3", "Dhamaal 4", 
+                "Gandhari", "G.D.N"
             ],
             "series": [
-                "The Great Indian Kapil Show", "IC 814: The Kandahar Hijack", 
-                "Tribhuvan Mishra CA Topper", "Kota Factory", "Heeramandi: The Diamond Bazaar", 
-                "Maamla Legal Hai", "Killer Soup", "The Railway Men", "Guns & Gulaabs", "Delhi Crime", "Kohrrha", "Scoop"
+                "The Great Indian Kapil Show", "Shaque: Trust No One", "#Love", 
+                "Chumbak", "Zakir Khan: Papa Yaar", "WWE SmackDown", 
+                "Operation Safed Sagar: The Untold Story of the Kargil War", 
+                "Musafir Cafe", "East of Eden", "Dhee Double Impact"
             ]
         },
         "amazon-prime": {
             "movies": [
-                "Chandu Champion", "Garudan", "Yodha", "Teri Baaton Mein Aisa Uljha Jiya", 
-                "Captain Miller", "Aavesham", "Varshangalkku Shesham", "Turbo", "Raayan", "Aanandhapuram Diaries", "Panchayat", "Tiger 3"
+                "Sardar 2", "Mahendragiri Vaaraahi", "Drishyam 2", "The Love Hypothesis", 
+                "Ramba Oorvasi Menaka", "Drishyam", "Ram and Leela", "Monster Island", 
+                "Jailer", "Drishyam 3"
             ],
             "series": [
-                "Mirzapur", "Panchayat", "The Family Man", "Farzi", 
-                "Made in Heaven", "Jubilee", "Breathe: Into the Shadows", 
-                "Poacher", "Indian Police Force", "Dahaad", "Bambai Meri Jaan", "Call Me Bae"
+                "Sardar 2", "Dupahiya", "Mahendragiri Vaaraahi", "Rise and Fall", 
+                "Drishyam 2", "Waiting Hai", "The Love Hypothesis", "Ramba Oorvasi Menaka", 
+                "Neagley", "Drishyam"
             ]
         },
         "disney": {
             "movies": [
                 "Premalu", "Manjummel Boys", "Bramayugam", "Hanu-Man", 
                 "Abraham Ozler", "Siren", "Lover", "Heart of Stone", 
-                "Guardians of the Galaxy Vol. 3", "Deadpool & Wolverine", "Salaar", "Brahmastra"
+                "Guardians of the Galaxy Vol. 3", "Deadpool & Wolverine"
             ],
             "series": [
                 "Taaza Khabar", "Aarya", "Special Ops", "The Night Manager", 
-                "Criminal Justice", "Showstopper", "Gunaah", "Lootere", "Karmma Calling", "City of Dreams", "Rudra", "Dahan"
+                "Criminal Justice", "Showstopper", "Gunaah", "Lootere", "Karmma Calling", "City of Dreams"
             ]
         }
     },
@@ -286,17 +289,20 @@ class StreamingDataGenerator:
     ) -> List[Dict[str, Any]]:
         """Generate a single Top 10 list for a platform, country, and date."""
         titles_pool = self.get_titles_pool(platform, country, content_type)
+        ordered = list(titles_pool)
 
-        # Deterministically shuffle titles based on date, platform, country, and type
+        # Keep #1 and #2 anchored to the true leaders, allow slight drift for spots 3-10 on past dates
         date_hash = int(abs(hash(f"{chart_date}_{platform}_{country}_{content_type}")) % 100000)
         rng = random.Random(date_hash)
-        shuffled = list(titles_pool)
-        rng.shuffle(shuffled)
+        if len(ordered) > 3 and chart_date != datetime.now().strftime("%Y-%m-%d"):
+            lower_pool = ordered[2:]
+            rng.shuffle(lower_pool)
+            ordered = ordered[:2] + lower_pool
 
         records = []
         base_points = rng.randint(700, 950)
 
-        for rank, title in enumerate(shuffled[:10], start=1):
+        for rank, title in enumerate(ordered[:10], start=1):
             # Points decrease logarithmically down the ranks
             points = max(10, int(base_points * (0.85 ** (rank - 1)) + rng.randint(-15, 15)))
             records.append({
