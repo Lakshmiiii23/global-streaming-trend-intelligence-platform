@@ -75,11 +75,14 @@ class FlixPatrolScraper:
     def build_chart_url(self, platform: str, country: str, chart_date: Optional[str] = None) -> str:
         """
         Construct the FlixPatrol chart URL.
-        Example: https://flixpatrol.com/top10/netflix/india/
+        Example: https://flixpatrol.com/top10/netflix/india/ or https://flixpatrol.com/top10/netflix/
         """
         plat = self.PLATFORM_SLUG_MAP.get(platform.lower().strip(), platform.lower().strip())
         ctry = self.COUNTRY_SLUG_MAP.get(country.lower().strip(), country.lower().strip())
-        url = f"{self.BASE_URL}/top10/{plat}/{ctry}/"
+        if ctry == "world":
+            url = f"{self.BASE_URL}/top10/{plat}/"
+        else:
+            url = f"{self.BASE_URL}/top10/{plat}/{ctry}/"
         if chart_date:
             url += f"{chart_date}/"
         return url
@@ -102,8 +105,9 @@ class FlixPatrolScraper:
             heading = parent_h.get_text(strip=True) if parent_h else ""
             h_lower = heading.lower()
 
-            # We target primary Top 10 charts and exclude kids / weekly overview tables
-            if "top 10" not in h_lower or "kids" in h_lower:
+            # Target primary Top charts (either "top 10" or "top tv" / "top movie") and exclude kids or regional breakdown tables
+            is_valid_chart = ("top 10" in h_lower) or ("top tv" in h_lower) or ("top movie" in h_lower) or ("top show" in h_lower)
+            if not is_valid_chart or "kids" in h_lower or "by country" in h_lower:
                 continue
 
             content_type = "movie" if ("movie" in h_lower or "film" in h_lower) else "series"
@@ -149,8 +153,13 @@ class FlixPatrolScraper:
                         days_in_top_10 = int(m.group(1))
                         break
 
-                # FlixPatrol standard daily points scoring: 10 down to 1
+                # FlixPatrol standard daily points scoring: 10 down to 1 (or global aggregated points if provided)
                 points = 11 - rank
+                for c in cells[2:]:
+                    txt = c.get_text(strip=True)
+                    if txt.isdigit() and int(txt) > 10:
+                        points = int(txt)
+                        break
 
                 records.append({
                     "platform": platform,
@@ -260,11 +269,15 @@ class FlixPatrolScraper:
         try:
             with Camoufox(headless=self.headless) as browser:
                 page = browser.new_page()
+                # Warm up session with initial request to clear Cloudflare Turnstile
+                logger.info("Initializing session and solving initial Cloudflare challenge...")
+                self._scrape_page_content(page, "https://flixpatrol.com/top10/netflix/united-states/")
+                logger.info("Turnstile solved! Beginning rapid sequential extraction...")
                 for platform in target_platforms:
                     for country in target_countries:
                         records = self.scrape_chart(platform, country, chart_date, page=page)
                         all_records.extend(records)
-                        time.sleep(self.delay)
+                        time.sleep(0.5)
         except Exception as e:
             logger.error("Error during batch scraping session: %s", e)
 
